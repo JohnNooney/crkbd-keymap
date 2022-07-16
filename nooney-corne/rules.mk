@@ -1,5 +1,12 @@
-MOUSEKEY_ENABLE = yes    # Mouse keys
-RGBLIGHT_ENABLE = yes    # Enable WS2812 RGB underlight.
+BOOTLOADER = caterina
+BOOTMAGIC_ENABLE = yes 
+
+MOUSEKEY_ENABLE = no    # Mouse keys
+RGBLIGHT_ENABLE = no    # Enable WS2812 RGB underlight.
 LTO_ENABLE = yes
+NKRO_ENABLE = yes
+CONSOLE_ENABLE = yes 
+
 WPM_ENABLE = yes
-OLED_DRIVER_ENABLE = yes
+OLED_ENABLE = yes
+OLED_DRIVER = SSD1306
