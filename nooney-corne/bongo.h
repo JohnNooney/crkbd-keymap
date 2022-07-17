@@ -168,7 +168,7 @@ void eval_anim_state(void)
     }
 }
 
-static void draw_bongo(void)
+static void draw_ramen(void)
 {
     eval_anim_state();
 
