@@ -81,13 +81,14 @@ oled_rotation_t oled_init_kb(oled_rotation_t rotation) {
   return rotation;
 }
 
-enum Layers{
-    L_BASE, L_LOWER, L_RAISE, L_ADJUST
-};
+#define L_BASE 0
+#define L_LOWER 2
+#define L_RAISE 4
+#define L_ADJUST 8
 
-void oled_render_layer_state_r2g(void) {
+void oled_render_layer_state(void) {
     oled_write_P(PSTR("Layer: "), false);
-    switch (get_highest_layer(layer_state)) {
+    switch (layer_state) {
         case L_BASE:
             oled_write_ln_P(PSTR("Default"), false);
             break;
@@ -98,14 +99,18 @@ void oled_render_layer_state_r2g(void) {
             oled_write_ln_P(PSTR("Raise"), false);
             break;
         case L_ADJUST:
+        case L_ADJUST|L_LOWER:
+        case L_ADJUST|L_RAISE:
+        case L_ADJUST|L_LOWER|L_RAISE:
             oled_write_ln_P(PSTR("Adjust"), false);
             break;
     }
 }
 
-//char keylog_str_r2g[24] = {};
 
-const char code_to_name_r2g[60] = {
+char keylog_str[24] = {};
+
+const char code_to_name[60] = {
     ' ', ' ', ' ', ' ', 'a', 'b', 'c', 'd', 'e', 'f',
     'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p',
     'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
@@ -113,40 +118,22 @@ const char code_to_name_r2g[60] = {
     'R', 'E', 'B', 'T', '_', '-', '=', '[', ']', '\\',
     '#', ';', '\'', '`', ',', '.', '/', ' ', ' ', ' '};
 
-char key_name_r2g = ' ';
-uint16_t last_keycode_r2g;
-uint8_t last_row_r2g;
-uint8_t last_col_r2g;
-
-void set_keylog_r2g(uint16_t keycode, keyrecord_t *record) {
-    key_name_r2g = ' ';
-    last_keycode_r2g = keycode;
+void set_keylog(uint16_t keycode, keyrecord_t *record) {
+  char name = ' ';
     if ((keycode >= QK_MOD_TAP && keycode <= QK_MOD_TAP_MAX) ||
-        (keycode >= QK_LAYER_TAP && keycode <= QK_LAYER_TAP_MAX)) { last_keycode_r2g = keycode & 0xFF; }
-    if (keycode < 60) {
-      key_name_r2g = code_to_name_r2g[keycode];
-    }
-    last_row_r2g = record->event.key.row;
-    last_col_r2g = record->event.key.col;
+        (keycode >= QK_LAYER_TAP && keycode <= QK_LAYER_TAP_MAX)) { keycode = keycode & 0xFF; }
+  if (keycode < 60) {
+    name = code_to_name[keycode];
+  }
+
+  // update keylog
+  snprintf(keylog_str, sizeof(keylog_str), "%dx%d, k%2d : %c",
+           record->event.key.row, record->event.key.col,
+           keycode, name);
 }
 
-const char *depad_str(const char *depad_str, char depad_char) {
-    while (*depad_str == depad_char) ++depad_str;
-    return depad_str;
-}
-
-void oled_render_keylog_r2g(void) {
-    //oled_write(keylog_str_r2g, false);
-    const char *last_row_r2g_str = get_u8_str(last_row_r2g, ' ');
-    oled_write(depad_str(last_row_r2g_str, ' '), false);
-    oled_write_P(PSTR("x"), false);
-    const char *last_col_r2g_str = get_u8_str(last_col_r2g, ' ');
-    oled_write(depad_str(last_col_r2g_str, ' '), false);
-    oled_write_P(PSTR(", k"), false);
-    const char *last_keycode_r2g_str = get_u16_str(last_keycode_r2g, ' ');
-    oled_write(depad_str(last_keycode_r2g_str, ' '), false);
-    oled_write_P(PSTR(":"), false);
-    oled_write_char(key_name_r2g, false);
+void oled_render_keylog(void) {
+    oled_write(keylog_str, false);
 }
 
 bool oled_task_kb(void) {
@@ -156,16 +143,16 @@ bool oled_task_kb(void) {
     draw_ramen();
   } else {
     // And if you want to put your image on the slave side, put it here instead:
-    oled_render_layer_state_r2g();
-    oled_render_keylog_r2g();
+    oled_render_layer_state();
+    oled_render_keylog();
   }
 	
 	return false;
 }
 
-bool process_record_kb(uint16_t keycode, keyrecord_t *record) {
+bool process_record_user(uint16_t keycode, keyrecord_t *record) {
   if (record->event.pressed) {
-    set_keylog_r2g(keycode, record);
+    set_keylog(keycode, record);
   }
-  return process_record_user(keycode, record);
+  return true;
 }
