@@ -14,6 +14,7 @@ enum anim_states
 uint8_t anim_state = Idle;
 uint32_t idle_timeout_timer = 0;
 uint32_t anim_timer = 0;
+uint32_t oled_timer = 0;
 uint8_t current_idle_frame = 0;
 uint8_t current_tap_frame = 0;
 
@@ -139,6 +140,7 @@ void eval_anim_state(void)
         case Idle:
             if (key_down) // Idle to Tap
             {
+                oled_on();
                 anim_state = Tap;
             }
             break;
@@ -160,6 +162,7 @@ void eval_anim_state(void)
             {
                 anim_state = Prep;
                 idle_timeout_timer = timer_read32();
+                oled_timer = timer_read32();
             }
             break;
 
@@ -171,6 +174,12 @@ void eval_anim_state(void)
 static void draw_ramen(void)
 {
     eval_anim_state();
+
+    if (timer_elapsed32(oled_timer) >= OLED_TIMEOUT) // Turn off OLED
+    {
+        oled_off();
+        return;
+    }
 
     oled_set_cursor(0, 0);
 
@@ -188,7 +197,7 @@ static void draw_ramen(void)
         case Prep:
             oled_write_raw_P(prep[0], ANIM_SIZE);
             break;
-
+            
         case Tap:
             oled_write_raw_P(tap[abs((TAP_FRAMES - 1) - current_tap_frame)], ANIM_SIZE);
             current_tap_frame = (current_tap_frame + 1) % TAP_FRAMES;
